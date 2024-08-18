@@ -1,0 +1,10 @@
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - lll
+    - gocyclo
+    - goconst

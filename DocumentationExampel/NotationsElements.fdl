@@ -1,0 +1,157 @@
+@title Documentation of the Custom Markup Language
+
+@abstract
+This documentation provides a comprehensive overview of the custom markup language designed for converting plain text files into structured HTML documents. The language utilizes specific notation elements that allow for easy formatting and organization of text. This document will cover all available commands, their usage, and the corresponding HTML output.
+
+@section Introduction
+
+@info The custom markup language uses commands that begin with the @ symbol. Each command is followed by specific content, which is processed and converted into HTML elements. The primary purpose of this language is to simplify the creation of well-structured HTML documents from plain text files.
+
+@section Syntax Overview
+
+@note
+All commands in this language start with the @ symbol, followed by the command name and any relevant content or parameters. The language is case-sensitive.
+
+@code
+@title <Title>
+@author <Author Name>
+@date <Date>
+@abstract
+@section <Section Title>
+@info <Information>
+@warning <Warning Message>
+@note <Note Content>
+@code
+@endcode
+@tbc
+@endcode
+
+@section Command Descriptions
+
+@info This section provides detailed descriptions of each command available in the markup language.
+
+@subsection Title and Metadata
+
+@code
+@title <Title>
+@endcode
+Creates the main title of the document. This command generates an <h1> HTML tag.
+
+@note The title is essential for defining the main heading of the document.
+
+@code
+@author <Author Name>
+@endcode
+Adds the author's name to the document, formatted as a <p> tag with a strong element for emphasis.
+
+@note This command helps attribute the document to its creator.
+
+@code
+@date <Date>
+@endcode
+Inserts a date into the document, formatted within a <p> tag and styled with a strong element.
+
+@note The date is typically used to indicate when the document was created or last updated.
+
+@subsection Abstract and Sections
+
+@code
+@abstract
+@endcode
+Starts an abstract section. The text that follows this command will be wrapped in a <p> tag within a <h2>Abstract</h2> header.
+
+@note The abstract provides a summary or introduction to the document's content.
+
+@code
+@section <Section Title>
+@endcode
+Creates a new section with the given title. The section is formatted as an <h2> HTML tag. The title also generates an ID, which can be used for navigation links within the document.
+
+@note Sections are crucial for organizing the content into logical parts.
+
+@subsection Highlighting and Alerts
+
+@code
+@info <Information>
+@endcode
+Highlights important information by wrapping the content in a styled <div> element with a blue background and a left blue border.
+
+@note Use this command to draw attention to key details or facts.
+
+@code
+@warning <Warning Message>
+@endcode
+Emphasizes a warning by wrapping the content in a styled <div> element with a red background and a left red border.
+
+@note Warnings are used to alert readers about potential issues or critical information.
+
+@code
+@note <Note Content>
+@endcode
+Adds a note, which is displayed in italicized text within a <p> tag.
+
+@note
+Notes are used to provide additional context or supplementary information.
+
+@subsection Code Blocks
+
+@info The following commands are used to insert and format code blocks in the document.
+
+@code
+@code
+@endcode
+Begins a code block. The content following this command will be wrapped in <pre><code> tags, which preserve whitespace and formatting.
+
+@note Use code blocks to display programming code or preformatted text.
+
+@code
+@endcode
+@endcode
+Ends the current code block. This command is implicitly triggered by an empty line if within a code block.
+
+@note Ensure that code blocks are closed properly to avoid formatting issues.
+
+@subsection Miscellaneous Commands
+
+@code
+@tbc
+@endcode
+Reserved for future use or to indicate that content is "to be continued." This command currently generates no output.
+
+@note This is a placeholder for potential extensions to the language.
+
+@section Example Usage
+
+@info Below is an example of how to use the custom markup language to create a simple HTML document.
+
+@code
+@title Example Document
+@author John Doe
+@date 2024-08-18
+
+@abstract
+This is a brief summary of the document. It provides an overview of the content.
+
+@section Introduction
+This is the introduction section. It contains general information about the document's purpose.
+
+@info This document is a demonstration of the custom markup language.
+
+@code
+// This is a code block
+function example() {
+return "Hello, World!";
+}
+@endcode
+
+@section Conclusion
+This is the conclusion section. It summarizes the key points discussed in the document.
+
+@warning Remember to save your work frequently to avoid data loss.
+@endcode
+
+@note This example demonstrates the basic structure and usage of the custom markup language.
+
+@info This documentation covers all the core features of the custom markup language. Future updates may introduce new commands or modify existing ones to enhance functionality.
+
+@note For further inquiries or suggestions, please contact the author.
