@@ -58,9 +58,12 @@ func processSection(line string, sections map[string]string) string {
 	return fmt.Sprintf("<h2 id='%s'>%s</h2>", sectionID, sectionTitle)
 }
 
-func processDefaultLine(line string, inCodeBlock bool) string {
+func processDefaultLine(line string, inCodeBlock bool, inTable bool) string {
 	if inCodeBlock {
 		return fmt.Sprintf("%s\n", line)
+	}
+	if inTable {
+		return ""
 	}
 	return line
 }
@@ -81,32 +84,45 @@ func escapeHTML(input string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(input, "<", "&lt;"), ">", "&gt;")
 }
 
-func parseLine(line string, inCodeBlock bool, sections map[string]string, sectionHeaders []string) (string, bool) {
+func parseLine(line string, inCodeBlock bool, inTable bool, sections map[string]string) (string, bool, bool) {
 	switch {
 	case strings.HasPrefix(line, "@title") && !inCodeBlock:
-		return fmt.Sprintf("<h1>%s</h1>", strings.TrimSpace(line[6:])), false
+		return fmt.Sprintf("<h1>%s</h1>", strings.TrimSpace(line[6:])), false, false
 	case strings.HasPrefix(line, "@author") && !inCodeBlock:
-		return fmt.Sprintf("<p>Author: %s</p>", strings.TrimSpace(line[7:])), false
+		return fmt.Sprintf("<p>Author: %s</p>", strings.TrimSpace(line[7:])), false, false
 	case strings.HasPrefix(line, "@date") && !inCodeBlock:
-		return fmt.Sprintf("<p>Date: %s</p>", strings.TrimSpace(line[5:])), false
+		return fmt.Sprintf("<p>Date: %s</p>", strings.TrimSpace(line[5:])), false, false
 	case strings.HasPrefix(line, "@abstract") && !inCodeBlock:
-		return "<h2>Abstract</h2><p>", false
+		return "<h2>Abstract</h2><p>", false, false
 	case strings.HasPrefix(line, "@info"):
-		return formatInfo(line), false
+		return formatInfo(line), false, false
 	case strings.HasPrefix(line, "@warning"):
-		return formatWarning(line), false
+		return formatWarning(line), false, false
 	case strings.HasPrefix(line, "@section") && !inCodeBlock:
-		return processSection(line, sections), false
+		return processSection(line, sections), false, false
 	case strings.HasPrefix(line, "@note"):
-		return fmt.Sprintf("<p><em>Note:</em> %s</p>", strings.TrimSpace(line[5:])), false
+		return fmt.Sprintf("<p><em>Note:</em> %s</p>", strings.TrimSpace(line[5:])), false, false
 	case strings.HasPrefix(line, "@code") && !inCodeBlock:
-		return "<pre><code>", true
+		return "<pre><code>", true, false
 	case strings.HasPrefix(line, "@endcode") && inCodeBlock:
-		return "</code></pre>", false
+		return "</code></pre>", false, false
 	case strings.HasPrefix(line, "@tbc"):
-		return "", false
+		return "to be continued", false, false
+	case strings.HasPrefix(line, "@table"):
+		return "<table border='1'>", false, true
+	case strings.HasPrefix(line, "@row"):
+		cells := strings.Split(strings.TrimSpace(line[4:]), "|")
+		var rowBuilder strings.Builder
+		rowBuilder.WriteString("<tr>")
+		for _, cell := range cells {
+			rowBuilder.WriteString(fmt.Sprintf("<td>%s</td>", strings.TrimSpace(cell)))
+		}
+		rowBuilder.WriteString("</tr>")
+		return rowBuilder.String(), false, inTable
+	case strings.HasPrefix(line, "@endtable"):
+		return "</table>", inCodeBlock, false
 	default:
-		return processDefaultLine(line, inCodeBlock), inCodeBlock
+		return processDefaultLine(line, inCodeBlock, inTable), inCodeBlock, inTable
 	}
 }
 
@@ -181,16 +197,16 @@ func creatIndex(tableofContent []string) {
 
 }
 
-func main() {
+func processFileDefaultMode() {
 	var mainTableOfContent []string
 
 	createOrCleanOutputDir()
 
 	for _, path := range getFdlFilePath() {
 		var output strings.Builder
-		var tocItems []string
 		sections := make(map[string]string)
 		inCodeBlock := false
+		inTable := false
 		mainTableOfContent = append(mainTableOfContent, convertFileNameToHTMLFile(filepath.Base(path)))
 		currentFile := mainTableOfContent[len(mainTableOfContent)-1]
 		fdlFile, err := os.Open(path)
@@ -202,7 +218,7 @@ func main() {
 		scanner := bufio.NewScanner(fdlFile)
 		for scanner.Scan() {
 			line := scanner.Text()
-			line, inCodeBlock = parseLine(escapeHTML(line), inCodeBlock, sections, tocItems)
+			line, inCodeBlock, inTable = parseLine(escapeHTML(line), inCodeBlock, inTable, sections)
 			if line != "" {
 				output.WriteString(line)
 				output.WriteString("\n")
@@ -221,4 +237,8 @@ func main() {
 	}
 
 	creatIndex(mainTableOfContent)
+}
+
+func main() {
+	processFileDefaultMode()
 }

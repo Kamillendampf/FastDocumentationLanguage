@@ -3,6 +3,7 @@
 ## Status
 
 [![Go](https://github.com/Kamillendampf/FastDocumentationLanguage/actions/workflows/ci.yml/badge.svg)](https://github.com/Kamillendampf/FastDocumentationLanguage/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/github/Kamillendampf/FastDocumentationLanguage/graph/badge.svg?token=UL2Y9IO05K)](https://codecov.io/github/Kamillendampf/FastDocumentationLanguage)
 
 ## Overview
 
@@ -31,8 +32,13 @@ The following commands are supported by the custom markup language:
 - `@code`: Begins a code block.
 - `@endcode`: Ends the current code block.
 - `@tbc`: Placeholder for content to be continued (no output).
+- `@table` :  Starts the definition of a table. This command creates a <table> element in the HTML output.
+- `@row <Header 1> | <Header 2> | <Header 3>` : Defines a new row in the table. The row content should be separated by the | character, which will be converted into <td> (table cell) elements. Each @row creates a <tr> (table row) in the HTML.
+- `@row Row 1 Col 1 | Row 1 Col 2 | Row 1 Col 3` :
+- `@endtable` :  Ends the table definition. This command closes the <table> element in the HTML output.
 
-## How It Works
+
+    ## How It Works
 
 1. **Input Parsing**: The program reads the input text file line by line.
 2. **Line Processing**: Each line is processed based on the markup commands. The program determines if the line should be converted into an HTML tag, a section heading, or part of a code block.
