@@ -81,7 +81,7 @@ func TestGenerateTableOfContents(t *testing.T) {
 func TestParseLine(t *testing.T) {
 	line := "@title Example Title"
 	expected := "<h1>Example Title</h1>"
-	result, _ := parseLine(line, false, make(map[string]string), []string{})
+	result, _, _ := parseLine(line, false, false, map[string]string{})
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
 	}
