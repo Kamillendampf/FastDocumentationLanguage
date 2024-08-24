@@ -194,7 +194,6 @@ func TestParseLine(t *testing.T) {
 
 	line = "@row cell1 | cell2"
 	expected = "<tr><td>cell1</td><td>cell2</td></tr>"
-	inTable = true
 	result, _, inTable = parseLine(line, false, true, map[string]string{})
 	if result != expected && inTable {
 		t.Errorf("Expected %s, got %s", expected, result)
