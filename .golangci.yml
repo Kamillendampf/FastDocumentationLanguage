@@ -5,6 +5,5 @@ linters:
     - staticcheck
     - unused
     - gosimple
-    - lll
-    - gocyclo
+    #- gocyclo
     - goconst

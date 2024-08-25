@@ -24,19 +24,32 @@ The following commands are supported by the custom markup language:
 - `@title <Title>`: Defines the main title of the document.
 - `@author <Author>`: Specifies the author of the document.
 - `@date <Date>`: Adds a date to the document.
+- `@version <version number>`: specify the current version of something (e.g a method or the documentation)
+- `@since <version number>` : could be used to show something is existing in the documentation or is deprecated
 - `@abstract`: Begins an abstract section.
 - `@section <Section Title>`: Starts a new section with the specified title.
 - `@info <Information>`: Highlights important information with a styled block.
 - `@warning <Warning>`: Emphasizes a warning message with a styled block.
 - `@note <Note>`: Adds a note in italicized text.
+- `@tip <Tip>` : Highlights a best practice or a tip
+- `@todo <todo>` : Shows there are open tasks to do
 - `@code`: Begins a code block.
 - `@endcode`: Ends the current code block.
 - `@tbc`: Placeholder for content to be continued (no output).
 - `@table` :  Starts the definition of a table. This command creates a <table> element in the HTML output.
 - `@row <Header 1> | <Header 2> | <Header 3>` : Defines a new row in the table. The row content should be separated by the | character, which will be converted into <td> (table cell) elements. Each @row creates a <tr> (table row) in the HTML.
-- `@row Row 1 Col 1 | Row 1 Col 2 | Row 1 Col 3` :
 - `@endtable` :  Ends the table definition. This command closes the <table> element in the HTML output.
+- `@list' : Starts the definition of a unordered list. If it is necessary to have a ordert list use `@list -n`, than you get a numeric list
+- `@item <item1>` add a element to your list
+- `@endlist` : Ends the list definition
+- `@example` : The content inside this block is intended to provide illustrative examples or sample code.
+- `@endexamle` : Ends a example block
+- `@usecase` : The content inside this block is intended to describe practical scenarios or use cases demonstrating the application or functionality of a feature or concept.
+- `@endusecase` : Ends a use case block
 
+- `@deprecated` : Marks a feature, function, or section as deprecated. This tag is used to indicate that the specified item is no longer recommended for use and may be removed in future versions. It is often accompanied by a visual cue to highlight its deprecated status.
+- `@param <param1> | <param2>` : Describes the parameters of a function or method. This tag is used to document the inputs required by a function, including their names and descriptions. It helps users understand what arguments a function expects and how they should be provided.
+- `@return <return1> | <return2>` : Describes the return values of a function or method. This tag is used to document what the function returns, including the type and a description of the returned value. It helps users understand the output of a function and how to interpret it.
 
     ## How It Works
 
