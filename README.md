@@ -59,6 +59,7 @@ The following commands are supported by the custom markup language:
 4. **Output Generation**: The processed content is then written into an HTML structure. If sections are defined, a table of contents is generated and inserted into the document.
 
 ## Usage
+Create files with the ending of `.fdl`, the converter recognizes these automatically.
 
 To use the converter:
 
