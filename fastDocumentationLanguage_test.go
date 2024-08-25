@@ -129,93 +129,6 @@ func TestGenerateTableOfContents(t *testing.T) {
 	}
 }
 
-func TestParseLine(t *testing.T) {
-	line := "@title Example Title"
-	expected := "<h1>Example Title</h1>"
-	result, _, _ := parseLine(line, false, false, map[string]string{})
-	if result != expected {
-		t.Errorf("Expected %s, got %s", expected, result)
-
-		// Test @author
-		line = "@author John Doe"
-		expected = "<p>Author: John Doe</p>"
-		result, _, _ = parseLine(line, false, false, map[string]string{})
-		if result != expected {
-			t.Errorf("Expected %s, got %s", expected, result)
-		}
-	}
-	// Test @date
-	line = "@date 2023-08-24"
-	expected = "<p>Date: 2023-08-24</p>"
-	result, _, _ = parseLine(line, false, false, map[string]string{})
-	if result != expected {
-		t.Errorf("Expected %s, got %s", expected, result)
-	}
-
-	// Test @abstract
-	line = "@abstract This is an abstract."
-	expected = "<h2>Abstract</h2><p>"
-	result, _, _ = parseLine(line, false, false, map[string]string{})
-	if result != expected {
-		t.Errorf("Expected %s, got %s", expected, result)
-	}
-
-	// Test @note
-	line = "@note This is a note."
-	expected = "<p><em>Note:</em> This is a note.</p>"
-	result, _, _ = parseLine(line, false, false, map[string]string{})
-	if result != expected {
-		t.Errorf("Expected %s, got %s", expected, result)
-	}
-
-	// Test @code block
-	line = "@code"
-	expected = "<pre><code>"
-	result, inCodeBlock, _ := parseLine(line, false, false, map[string]string{})
-	if result != expected || !inCodeBlock {
-		t.Errorf("Expected %s with inCodeBlock=true, got %s with inCodeBlock=%v", expected, result, inCodeBlock)
-	}
-
-	// Test @endcode block
-	line = "@endcode"
-	expected = "</code></pre>"
-	result, inCodeBlock, _ = parseLine(line, true, false, map[string]string{})
-	if result != expected || inCodeBlock {
-		t.Errorf("Expected %s with inCodeBlock=false, got %s with inCodeBlock=%v", expected, result, inCodeBlock)
-	}
-
-	// Test @table and @row
-	line = "@table"
-	expected = "<table border='1'>"
-	result, _, inTable := parseLine(line, false, false, map[string]string{})
-	if result != expected || !inTable {
-		t.Errorf("Expected %s with inTable=true, got %s with inTable=%v", expected, result, inTable)
-	}
-
-	line = "@row cell1 | cell2"
-	expected = "<tr><td>cell1</td><td>cell2</td></tr>"
-	result, _, inTable = parseLine(line, false, true, map[string]string{})
-	if result != expected && inTable {
-		t.Errorf("Expected %s, got %s", expected, result)
-	}
-
-	// Test @endtable
-	line = "@endtable"
-	expected = "</table>"
-	result, _, inTable = parseLine(line, false, true, map[string]string{})
-	if result != expected || inTable {
-		t.Errorf("Expected %s with inTable=false, got %s with inTable=%v", expected, result, inTable)
-	}
-
-	// Test @tbc (to be continued)
-	line = "@tbc"
-	expected = "to be continued"
-	result, _, _ = parseLine(line, false, false, map[string]string{})
-	if result != expected {
-		t.Errorf("Expected %s, got %s", expected, result)
-	}
-}
-
 func TestEscapeHTML(t *testing.T) {
 	input := "<div>Example</div>"
 	expected := "&lt;div&gt;Example&lt;/div&gt;"
@@ -287,7 +200,7 @@ func TestProcessFileDefaultMode(t *testing.T) {
 		t.Fatalf("Failed to read output file: %v", err)
 	}
 
-	expectedContent := "<h1><h2>Table of Contents</h2><ul><li><a href='#sample-section'>Sample Section</a></li></ul>\nSample Title</h1>\n<h2 id='sample-section'>Sample Section</h2>\n<div style='background-color:#e7f3fe;padding:10px;border-left:6px solid #2196F3;'><strong>Info:</strong> This is an info message.</div>\n"
+	expectedContent := "<h1><h2>Table of Contents</h2><ul><li><a href='#sample-section'>Sample Section</a></li></ul>\nSample Title</h1>\n<h2 id='sample-section'>Sample Section</h2>\n<div style='background-color:#e7f3fe;padding:10px;border-left:6px solid #2196F3;'><strong>Info:</strong> This is an info message.</div>\n<style>.example-box {border: 2px solid black;padding: 10px;margin: 20px 0;border-radius: 5px;background-color: #f9f9f9;position: relative;overflow: hidden;}.example-title {font-weight: bold;margin: 0;padding: 5px 10px;background-color: #e0e0e0;border-bottom: 2px solid black;position: absolute;top: 0;left: 0;width: 100%;box-sizing: border-box;}.example-content {padding-top: 40px;}</style>"
 	if string(content) != expectedContent {
 		t.Errorf("Expected content:\n%s\nGot:\n%s", expectedContent, content)
 	}
@@ -296,5 +209,117 @@ func TestProcessFileDefaultMode(t *testing.T) {
 	indexFile := filepath.Join(tempDir, "fdlDocumentation", "index.html")
 	if _, err := os.Stat(indexFile); os.IsNotExist(err) {
 		t.Errorf("Expected index file %s to be created, but it does not exist", indexFile)
+	}
+}
+
+func TestParseLine(t *testing.T) {
+	tests := []struct {
+		line                       string
+		inCodeBlock                bool
+		inTable                    bool
+		inList                     bool
+		isUseCaseORExample         bool
+		expectedOutput             string
+		expectedInCodeBlock        bool
+		expectedInTable            bool
+		expectedInList             bool
+		expectedIsUseCaseORExample bool
+	}{
+		// Testcases for different types of lines and states
+
+		// @title
+		{"@title My Title", false, false, false, false, "<h1>My Title</h1>", false, false, false, false},
+
+		// @author
+		{"@author John Doe", false, false, false, false, "<p>Author: John Doe</p>", false, false, false, false},
+
+		// @date
+		{"@date 2024-08-25", false, false, false, false, "<p>Date: 2024-08-25</p>", false, false, false, false},
+
+		// @abstract
+		{"@abstract", false, false, false, false, "<h2>Abstract</h2><p>", false, false, false, false},
+
+		// @info
+		{"@info Information", false, false, false, false, formatInfo("@info Information"), false, false, false, false},
+
+		// @warning
+		{"@warning Warning Message", false, false, false, false, formatWarning("@warning Warning Message"), false, false, false, false},
+
+		// @note
+		{"@note This is a note", false, false, false, false, "<p><em>Note:</em> This is a note</p>", false, false, false, false},
+
+		// @code and @endcode
+		{"@code", false, false, false, false, "<div class='example-box'><div class='example-title'>Code:</div><div class='example-content'><pre><code>", true, false, false, false},
+		{"@endcode", true, false, false, false, "</code></pre></div></div>", false, false, false, false},
+		{"@code", false, false, false, true, "<pre><code>", true, false, false, true},
+		{"@endcode", true, false, false, true, "</code></pre>", false, false, false, true},
+
+		// @tbc
+		{"@tbc", false, false, false, false, "", false, false, false, false},
+
+		// @table and @row
+		{"@table", false, false, false, false, "<table border='1'>", false, true, false, false},
+		{"@row cell1|cell2|cell3", false, true, false, false, "<tr><td>cell1</td><td>cell2</td><td>cell3</td></tr>", false, true, false, false},
+		{"@endtable", false, true, false, false, "</table>", false, false, false, false},
+
+		// @version
+		{"@version 1.0.0", false, false, false, false, "<p><em>Version:</em> 1.0.0</p>", false, false, false, false},
+
+		// @since
+		{"@since 2024", false, false, false, false, "<p><em>Since:</em> 2024</p>", false, false, false, false},
+
+		// @deprecated
+		{"@deprecated", false, false, false, false, "<strong><em style='color:red;'>Deprecated!</em></strong>", false, false, false, false},
+
+		// @param
+		{"@param param1|param2", false, false, false, false, "<p><b>Parameters</b></p><p>param1</p><p>param2</p>", false, false, false, false},
+
+		// @return
+		{"@return return1|return2", false, false, false, false, "<p><b>Return:</b></p><p>return1</p><p>return2</p>", false, false, false, false},
+
+		// @list
+		{"@list -n", false, false, false, false, "<ol>", false, false, true, false},
+		{"@list", false, false, false, false, "<ul>", false, false, true, false},
+
+		// @item
+		{"@item List item", false, false, true, false, "<li>List item</li>", false, false, true, false},
+
+		// @endlist
+		{"@endlist", false, false, true, false, "</ul></ol>", false, false, false, false},
+
+		// @tip
+		{"@tip This is a tip", false, false, false, false, formatTip("This is a tip"), false, false, false, false},
+
+		// @todo
+		{"@todo This is a todo", false, false, false, false, "<p><em>TODO:</em> This is a todo</p>", false, false, false, false},
+
+		// @example
+		{"@example", false, false, false, false, "<div class='example-box'><div class='example-title'>Example:</div><div class='example-content'>", false, false, false, true},
+		{"@endexample", false, false, false, true, "</div></div>", false, false, false, false},
+
+		// @usecase
+		{"@usecase", false, false, false, false, "<div class='example-box'><div class='example-title'>UseCase:</div><div class='example-content'>", false, false, false, true},
+		{"@endusecase", false, false, false, true, "</div></div>", false, false, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.line, func(t *testing.T) {
+			got, gotInCodeBlock, gotInTable, gotInList, gotIsUseCaseORExample := parseLine(tt.line, tt.inCodeBlock, tt.inTable, tt.inList, tt.isUseCaseORExample, nil)
+			if got != tt.expectedOutput {
+				t.Errorf("parseLine() = %v, want %v", got, tt.expectedOutput)
+			}
+			if gotInCodeBlock != tt.expectedInCodeBlock {
+				t.Errorf("parseLine() inCodeBlock = %v, want %v", gotInCodeBlock, tt.expectedInCodeBlock)
+			}
+			if gotInTable != tt.expectedInTable {
+				t.Errorf("parseLine() inTable = %v, want %v", gotInTable, tt.expectedInTable)
+			}
+			if gotInList != tt.expectedInList {
+				t.Errorf("parseLine() inList = %v, want %v", gotInList, tt.expectedInList)
+			}
+			if gotIsUseCaseORExample != tt.expectedIsUseCaseORExample {
+				t.Errorf("parseLine() isUseCaseORExample = %v, want %v", gotIsUseCaseORExample, tt.expectedIsUseCaseORExample)
+			}
+		})
 	}
 }

@@ -51,6 +51,11 @@ func formatWarning(line string) string {
 		"<strong>Warning:</strong> %s</div>", strings.TrimSpace(line[8:]))
 }
 
+func formatTip(line string) string {
+	return fmt.Sprintf("<div style='background-color:#8fbc8f;padding:10px;border-left:6px solid #6e8b3d;'>"+
+		"<strong>Tip:</strong> %s</div>", strings.TrimSpace(line[8:]))
+}
+
 func processSection(line string, sections map[string]string) string {
 	sectionTitle := strings.TrimSpace(line[8:])
 	sectionID := strings.ToLower(strings.ReplaceAll(sectionTitle, " ", "-"))
@@ -84,32 +89,40 @@ func escapeHTML(input string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(input, "<", "&lt;"), ">", "&gt;")
 }
 
-func parseLine(line string, inCodeBlock bool, inTable bool, sections map[string]string) (string, bool, bool) {
+func parseLine(line string, inCodeBlock bool, inTable bool, inList bool, isUseCaseORExample bool, sections map[string]string) (string, bool, bool, bool, bool) {
 	switch {
 	case strings.HasPrefix(line, "@title") && !inCodeBlock:
-		return fmt.Sprintf("<h1>%s</h1>", strings.TrimSpace(line[6:])), false, false
+		return fmt.Sprintf("<h1>%s</h1>", strings.TrimSpace(line[6:])), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@author") && !inCodeBlock:
-		return fmt.Sprintf("<p>Author: %s</p>", strings.TrimSpace(line[7:])), false, false
+		return fmt.Sprintf("<p>Author: %s</p>", strings.TrimSpace(line[7:])), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@date") && !inCodeBlock:
-		return fmt.Sprintf("<p>Date: %s</p>", strings.TrimSpace(line[5:])), false, false
+		return fmt.Sprintf("<p>Date: %s</p>", strings.TrimSpace(line[5:])), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@abstract") && !inCodeBlock:
-		return "<h2>Abstract</h2><p>", false, false
+		return "<h2>Abstract</h2><p>", inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@info"):
-		return formatInfo(line), false, false
+		return formatInfo(line), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@warning"):
-		return formatWarning(line), false, false
-	case strings.HasPrefix(line, "@section") && !inCodeBlock:
-		return processSection(line, sections), false, false
+		return formatWarning(line), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@section") && !inCodeBlock && !isUseCaseORExample:
+		return processSection(line, sections), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@note"):
-		return fmt.Sprintf("<p><em>Note:</em> %s</p>", strings.TrimSpace(line[5:])), false, false
+		return fmt.Sprintf("<p><em>Note:</em> %s</p>", strings.TrimSpace(line[5:])), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@code") && !inCodeBlock:
-		return "<pre><code>", true, false
+		if !isUseCaseORExample {
+			return "<div class='example-box'><div class='example-title'>Code:</div><div class='example-content'><pre><code>", !inCodeBlock, inTable, inList, isUseCaseORExample
+		} else {
+			return "<pre><code>", !inCodeBlock, inTable, inList, isUseCaseORExample
+		}
 	case strings.HasPrefix(line, "@endcode") && inCodeBlock:
-		return "</code></pre>", false, false
+		if !isUseCaseORExample {
+			return "</code></pre></div></div>", !inCodeBlock, inTable, inList, isUseCaseORExample
+		} else {
+			return "</code></pre>", !inCodeBlock, inTable, inList, isUseCaseORExample
+		}
 	case strings.HasPrefix(line, "@tbc"):
-		return "to be continued", false, false
+		return "", inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@table"):
-		return "<table border='1'>", false, true
+		return "<table border='1'>", inCodeBlock, !inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@row"):
 		cells := strings.Split(strings.TrimSpace(line[4:]), "|")
 		var rowBuilder strings.Builder
@@ -118,11 +131,57 @@ func parseLine(line string, inCodeBlock bool, inTable bool, sections map[string]
 			rowBuilder.WriteString(fmt.Sprintf("<td>%s</td>", strings.TrimSpace(cell)))
 		}
 		rowBuilder.WriteString("</tr>")
-		return rowBuilder.String(), false, inTable
+		return rowBuilder.String(), inCodeBlock, inTable, inList, isUseCaseORExample
 	case strings.HasPrefix(line, "@endtable"):
-		return "</table>", inCodeBlock, false
+		return "</table>", inCodeBlock, !inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@version"):
+		return fmt.Sprintf("<p><em>Version:</em> %s</p>", strings.TrimSpace(line[8:])), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@since"):
+		return fmt.Sprintf("<p><em>Since:</em> %s</p>", strings.TrimSpace(line[6:])), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@deprecated"):
+		return "<strong><em style='color:red;'>Deprecated!</em></strong>", inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@param"):
+		params := strings.Split(strings.TrimSpace(line[6:]), "|")
+		var rowBuilder strings.Builder
+		rowBuilder.WriteString("<p><b>Parameters</b></p>")
+		for _, param := range params {
+			rowBuilder.WriteString(fmt.Sprintf("<p>%s</p>", param))
+		}
+		return rowBuilder.String(), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@return"):
+		params := strings.Split(strings.TrimSpace(line[7:]), "|")
+		var rowBuilder strings.Builder
+		rowBuilder.WriteString("<p><b>Return:</b></p>")
+		for _, param := range params {
+			rowBuilder.WriteString(fmt.Sprintf("<p>%s</p>", param))
+		}
+		return rowBuilder.String(), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@list"):
+		line = strings.TrimSpace(line[5:])
+		switch {
+		case strings.HasPrefix(line, "-n"):
+			return "<ol>", inCodeBlock, inTable, !inList, isUseCaseORExample
+		default:
+			return "<ul>", inCodeBlock, inTable, !inList, isUseCaseORExample
+		}
+	case strings.HasPrefix(line, "@item") && inList:
+		return fmt.Sprintf("<li>%s</li>", strings.TrimSpace(line[5:])), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@endlist"):
+		return "</ul></ol>", inCodeBlock, inTable, !inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@tip"):
+		return formatTip(strings.TrimSpace(line[4:])), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@todo"):
+		return fmt.Sprintf("<p><em>TODO:</em> %s</p>", strings.TrimSpace(line[5:])), inCodeBlock, inTable, inList, isUseCaseORExample
+	case strings.HasPrefix(line, "@example"):
+		return "<div class='example-box'><div class='example-title'>Example:</div><div class='example-content'>", inCodeBlock, inTable, inList, !isUseCaseORExample
+	case strings.HasPrefix(line, "@endexample"):
+		return "</div></div>", inCodeBlock, inTable, inList, !isUseCaseORExample
+	case strings.HasPrefix(line, "@usecase"):
+		return "<div class='example-box'><div class='example-title'>UseCase:</div><div class='example-content'>", inCodeBlock, inTable, inList, !isUseCaseORExample
+	case strings.HasPrefix(line, "@endusecase"):
+		return "</div></div>", inCodeBlock, inTable, inList, !isUseCaseORExample
 	default:
-		return processDefaultLine(line, inCodeBlock, inTable), inCodeBlock, inTable
+		return processDefaultLine(line, inCodeBlock, inTable), inCodeBlock, inTable, inList, isUseCaseORExample
 	}
 }
 
@@ -196,7 +255,13 @@ func creatIndex(tableofContent []string) {
 	outputStream(table, "index.html")
 
 }
-
+func processStyling() string {
+	return "<style>.example-box {border: 2px solid black;padding: 10px;margin: 20px 0;" +
+		"border-radius: 5px;background-color: #f9f9f9;position: relative;overflow: hidden;}" +
+		".example-title {font-weight: bold;margin: 0;padding: 5px 10px;background-color: #e0e0e0;" +
+		"border-bottom: 2px solid black;position: absolute;top: 0;left: 0;width: 100%;box-sizing: border-box;}" +
+		".example-content {padding-top: 40px;}</style>"
+}
 func processFileDefaultMode() {
 	var mainTableOfContent []string
 
@@ -207,6 +272,8 @@ func processFileDefaultMode() {
 		sections := make(map[string]string)
 		inCodeBlock := false
 		inTable := false
+		inList := false
+		isUsecaseOrExample := false
 		mainTableOfContent = append(mainTableOfContent, convertFileNameToHTMLFile(filepath.Base(path)))
 		currentFile := mainTableOfContent[len(mainTableOfContent)-1]
 		fdlFile, err := os.Open(path)
@@ -218,7 +285,7 @@ func processFileDefaultMode() {
 		scanner := bufio.NewScanner(fdlFile)
 		for scanner.Scan() {
 			line := scanner.Text()
-			line, inCodeBlock, inTable = parseLine(escapeHTML(line), inCodeBlock, inTable, sections)
+			line, inCodeBlock, inTable, inList, isUsecaseOrExample = parseLine(escapeHTML(line), inCodeBlock, inTable, inList, isUsecaseOrExample, sections)
 			if line != "" {
 				output.WriteString(line)
 				output.WriteString("\n")
@@ -231,6 +298,7 @@ func processFileDefaultMode() {
 
 		toc := generateTableOfContents(sections)
 		finalOutput := strings.Replace(output.String(), "<h1>", "<h1>"+toc+"\n", 1)
+		finalOutput = finalOutput + processStyling()
 
 		outputStream(finalOutput, currentFile)
 		fdlFile.Close()
