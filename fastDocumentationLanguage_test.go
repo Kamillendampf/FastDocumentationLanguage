@@ -93,7 +93,7 @@ func TestProcessSection(t *testing.T) {
 
 func TestProcessDefaultLine(t *testing.T) {
 	input := "This is a regular line."
-	expected := "This is a regular line."
+	expected := "This is a regular line.<br>"
 	result := processDefaultLine(input, false, false)
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
