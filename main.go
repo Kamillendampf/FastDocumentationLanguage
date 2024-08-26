@@ -53,7 +53,7 @@ func formatWarning(line string) string {
 
 func formatTip(line string) string {
 	return fmt.Sprintf("<div style='background-color:#8fbc8f;padding:10px;border-left:6px solid #6e8b3d;'>"+
-		"<strong>Tip:</strong> %s</div>", strings.TrimSpace(line[8:]))
+		"<strong>Tip:</strong> %s</div>", line)
 }
 
 func processSection(line string, sections map[string]string) string {
@@ -70,7 +70,7 @@ func processDefaultLine(line string, inCodeBlock bool, inTable bool) string {
 	if inTable {
 		return ""
 	}
-	return line
+	return line + "<br>"
 }
 
 func generateTableOfContents(sections map[string]string) string {
