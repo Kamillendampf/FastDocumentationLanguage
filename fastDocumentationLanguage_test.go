@@ -411,7 +411,7 @@ func TestGetFilePath(t *testing.T) {
 
 	for _, file := range testFiles {
 		filePath := filepath.Join(tempDir, file.name)
-		err := ioutil.WriteFile(filePath, []byte(file.content), 0644)
+		err := os.WriteFile(filePath, []byte(file.content), 0644)
 		if err != nil {
 			t.Fatalf("Could not create test file %s: %v", file.name, err)
 		}
