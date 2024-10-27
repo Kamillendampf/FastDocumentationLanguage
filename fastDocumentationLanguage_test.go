@@ -36,7 +36,7 @@ func TestGetFdlFilePath(t *testing.T) {
 	}(originalDir)
 
 	// Test function
-	files := getFdlFilePath()
+	files := getFilePath(".fdl")
 	if len(files) != 1 {
 		t.Errorf("Expected 1 .fdl file, got %d", len(files))
 	}
@@ -146,7 +146,7 @@ func TestCreateOrCleanOutputDir(t *testing.T) {
 	}
 	defer os.RemoveAll(testDir)
 
-	createOrCleanOutputDir()
+	createOrCleanOutputDir("/fdlDocumentation")
 
 	// Check if directory exists
 	if _, err := os.Stat(testDir); os.IsNotExist(err) {
@@ -186,7 +186,7 @@ func TestProcessFileDefaultMode(t *testing.T) {
 	}
 
 	// Run the processFileDefaultMode function.
-	processFileDefaultMode()
+	processFiles()
 
 	// Verify the output.
 	outputFile := filepath.Join(tempDir, "fdlDocumentation", "test.html")

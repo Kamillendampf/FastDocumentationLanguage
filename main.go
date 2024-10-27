@@ -10,9 +10,36 @@ import (
 	"strings"
 )
 
-func getFdlFilePath() []string {
+type flag struct {
+	FileExtension string
+	Directory     string
+}
+
+func getFlagsFromCli() flag {
+	var setFlags = flag{
+		FileExtension: ".fdl",
+		Directory:     "/documentation",
+	}
+	for _, arg := range os.Args {
+		fmt.Printf("es wird die argsliste durch laufen\n %s", arg)
+		if strings.HasPrefix(arg, "--file-extension") || strings.HasPrefix(arg, "-fe") {
+			extension := strings.Split(arg, "=")
+			setFlags.FileExtension = extension[1]
+		}
+		if strings.HasPrefix(arg, "--directory") || strings.HasPrefix(arg, "-dir") {
+			dir := strings.Split(arg, "=")
+			setFlags.Directory = dir[1]
+		}
+	}
+
+	return setFlags
+}
+func getFilePath(fileExtension string) []string {
 	var pathSlices []string
 
+	if fileExtension == "" {
+		log.Panic("No File Extensions is set.")
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Panic("Error until reading the directories: ", err)
@@ -24,7 +51,7 @@ func getFdlFilePath() []string {
 			return err
 		}
 
-		if !d.IsDir() && strings.HasSuffix(d.Name(), ".fdl") {
+		if !d.IsDir() && strings.HasSuffix(d.Name(), fileExtension) {
 			pathSlices = append(pathSlices, path)
 		}
 		return nil
@@ -185,13 +212,16 @@ func parseLine(line string, inCodeBlock bool, inTable bool, inList bool, isUseCa
 	}
 }
 
-func createOrCleanOutputDir() {
+func createOrCleanOutputDir(directory string) {
+	if directory == "" {
+		log.Panic("directory is empty not set")
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Panic("Error until reading the directories: ", err)
 	}
 
-	outputPath := cwd + "/fdlDocumentation"
+	outputPath := cwd + directory
 
 	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
 		log.Println("The directory don't exist, it is created")
@@ -212,13 +242,13 @@ func createOrCleanOutputDir() {
 	}
 }
 
-func outputStream(finaleFormattedHTML string, filename string) {
+func outputStream(finaleFormattedHTML string, filename string, directory string) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Panic("Error until reading the directories: ", err)
 	}
 
-	outputPath := cwd + "/fdlDocumentation"
+	outputPath := cwd + directory
 
 	if err := os.Chdir(outputPath); err != nil {
 		fmt.Println(cwd)
@@ -241,7 +271,7 @@ func outputStream(finaleFormattedHTML string, filename string) {
 	}
 }
 
-func creatIndex(tableofContent []string) {
+func creatIndex(tableofContent []string, directory string) {
 	table := "<html><body><h1>Documentation <br> Table Of Content</h1><ul>"
 	for index, content := range tableofContent {
 		chapterName := strings.Split(content, ".")
@@ -252,7 +282,7 @@ func creatIndex(tableofContent []string) {
 	}
 	table = table + "</ul></body></html>"
 
-	outputStream(table, "index.html")
+	outputStream(table, "index.html", directory)
 
 }
 func processStyling() string {
@@ -262,12 +292,12 @@ func processStyling() string {
 		"border-bottom: 2px solid black;position: absolute;top: 0;left: 0;width: 100%;box-sizing: border-box;}" +
 		".example-content {padding-top: 40px;}</style>"
 }
-func processFileDefaultMode() {
+func processFiles() {
 	var mainTableOfContent []string
+	setFlags := getFlagsFromCli()
+	createOrCleanOutputDir(setFlags.Directory)
 
-	createOrCleanOutputDir()
-
-	for _, path := range getFdlFilePath() {
+	for _, path := range getFilePath(setFlags.FileExtension) {
 		var output strings.Builder
 		sections := make(map[string]string)
 		inCodeBlock := false
@@ -300,13 +330,13 @@ func processFileDefaultMode() {
 		finalOutput := strings.Replace(output.String(), "<h1>", "<h1>"+toc+"\n", 1)
 		finalOutput = finalOutput + processStyling()
 
-		outputStream(finalOutput, currentFile)
+		outputStream(finalOutput, currentFile, setFlags.Directory)
 		fdlFile.Close()
 	}
 
-	creatIndex(mainTableOfContent)
+	creatIndex(mainTableOfContent, setFlags.Directory)
 }
 
 func main() {
-	processFileDefaultMode()
+	processFiles()
 }
