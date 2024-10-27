@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -322,4 +323,133 @@ func TestParseLine(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestGetFlagsFromCli testet die getFlagsFromCli Funktion
+func TestGetFlagsFromCli(t *testing.T) {
+	tests := []struct {
+		args        []string
+		expected    flag
+		description string
+	}{
+		{
+			args:        []string{"cmd", "--file-extension=.txt", "--directory=/docs"},
+			expected:    flag{FileExtension: ".txt", Directory: "/docs"},
+			description: "Valid flags provided",
+		},
+		{
+			args:        []string{"cmd"},
+			expected:    flag{FileExtension: ".fdl", Directory: "/documentation"},
+			description: "Default flags used",
+		},
+		{
+			args:        []string{"cmd", "-fe=.md"},
+			expected:    flag{FileExtension: ".md", Directory: "/documentation"},
+			description: "Short flag for file extension",
+		},
+		{
+			args:        []string{"cmd", "-dir=./custom"},
+			expected:    flag{FileExtension: ".fdl", Directory: "./custom"},
+			description: "Short flag for directory",
+		},
+		{
+			args:        []string{"cmd", "--file-extension=invalid"},
+			expected:    flag{FileExtension: "invalid", Directory: "/documentation"},
+			description: "Invalid file extension flag",
+		},
+	}
+
+	// Speichern des ursprünglichen os.Args
+	originalArgs := os.Args
+
+	// Testen der Fälle
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			// Setze os.Args auf die Testdaten
+			os.Args = tt.args
+
+			// Rufe die Funktion auf
+			got := getFlagsFromCli()
+
+			// Überprüfe, ob das Ergebnis den Erwartungen entspricht
+			if got != tt.expected {
+				t.Errorf("getFlagsFromCli() = %+v; want %+v", got, tt.expected)
+			}
+		})
+	}
+
+	// Stelle os.Args auf die ursprünglichen Werte zurück
+	os.Args = originalArgs
+}
+
+func TestGetFilePath(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Override the current working directory with the temporary directory.
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get current working directory: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(originalDir)
+	}()
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("Failed to change directory to temp dir: %v", err)
+	}
+
+	// Erstelle einige Testdateien
+	testFiles := []struct {
+		name     string
+		content  string
+		expected bool // Gibt an, ob die Datei in den Ergebnissen erwartet wird
+	}{
+		{"test1.fdl", "Inhalt von test1", true},
+		{"test2.txt", "Inhalt von test2", false},
+		{"test3.fdl", "Inhalt von test3", true},
+		{"test4.md", "Inhalt von test4", false},
+	}
+
+	for _, file := range testFiles {
+		filePath := filepath.Join(tempDir, file.name)
+		err := ioutil.WriteFile(filePath, []byte(file.content), 0644)
+		if err != nil {
+			t.Fatalf("Could not create test file %s: %v", file.name, err)
+		}
+	}
+
+	// Teste die getFilePath Funktion mit der .fdl Erweiterung
+	got := getFilePath(".fdl")
+
+	// Überprüfe, ob die richtigen Dateipfade zurückgegeben werden
+	expectedPaths := []string{
+		filepath.Join(tempDir, "test1.fdl"),
+		filepath.Join(tempDir, "test3.fdl"),
+	}
+
+	// Überprüfe, ob die Rückgabe der Funktion die erwarteten Pfade enthält
+	for _, expectedPath := range expectedPaths {
+		if !contains(got, expectedPath) {
+			t.Errorf("Expected path %s not found in results: %+v", expectedPath, got)
+		}
+	}
+
+	// Überprüfe, ob keine unerwarteten Pfade zurückgegeben werden
+	for _, file := range testFiles {
+		if file.expected && !contains(got, filepath.Join(tempDir, file.name)) {
+			t.Errorf("Expected path %s not found in results: %+v", filepath.Join(tempDir, file.name), got)
+		} else if !file.expected && contains(got, filepath.Join(tempDir, file.name)) {
+			t.Errorf("Unexpected path found: %s", filepath.Join(tempDir, file.name))
+		}
+	}
+}
+
+// Hilfsfunktion, um zu überprüfen, ob ein Slice einen bestimmten String enthält
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
