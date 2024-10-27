@@ -21,14 +21,14 @@ func getFlagsFromCli() flag {
 		Directory:     "/documentation",
 	}
 	for _, arg := range os.Args {
-		fmt.Printf("es wird die argsliste durch laufen\n %s", arg)
 		if strings.HasPrefix(arg, "--file-extension") || strings.HasPrefix(arg, "-fe") {
 			extension := strings.Split(arg, "=")
 			setFlags.FileExtension = extension[1]
-		}
-		if strings.HasPrefix(arg, "--directory") || strings.HasPrefix(arg, "-dir") {
+		} else if strings.HasPrefix(arg, "--directory") || strings.HasPrefix(arg, "-dir") {
 			dir := strings.Split(arg, "=")
 			setFlags.Directory = dir[1]
+		} else {
+			log.Println("The default values are used.")
 		}
 	}
 

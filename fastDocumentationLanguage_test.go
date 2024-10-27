@@ -189,7 +189,7 @@ func TestProcessFileDefaultMode(t *testing.T) {
 	processFiles()
 
 	// Verify the output.
-	outputFile := filepath.Join(tempDir, "fdlDocumentation", "test.html")
+	outputFile := filepath.Join(tempDir, "documentation", "test.html")
 	if _, err := os.Stat(outputFile); os.IsNotExist(err) {
 		t.Errorf("Expected output file %s to be created, but it does not exist", outputFile)
 	}
@@ -206,7 +206,7 @@ func TestProcessFileDefaultMode(t *testing.T) {
 	}
 
 	// Verify the index.html file.
-	indexFile := filepath.Join(tempDir, "fdlDocumentation", "index.html")
+	indexFile := filepath.Join(tempDir, "documentation", "index.html")
 	if _, err := os.Stat(indexFile); os.IsNotExist(err) {
 		t.Errorf("Expected index file %s to be created, but it does not exist", indexFile)
 	}
