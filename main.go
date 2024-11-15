@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/common-nighthawk/go-figure"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,23 +14,30 @@ import (
 type flag struct {
 	FileExtension string
 	Directory     string
+	Devdoc        bool
 }
 
 func getFlagsFromCli() flag {
 	var setFlags = flag{
 		FileExtension: ".fdl",
 		Directory:     "/documentation",
+		Devdoc:        false,
 	}
-	for _, arg := range os.Args {
-		if strings.HasPrefix(arg, "--file-extension") || strings.HasPrefix(arg, "-fe") {
-			extension := strings.Split(arg, "=")
-			setFlags.FileExtension = extension[1]
-		} else if strings.HasPrefix(arg, "--directory") || strings.HasPrefix(arg, "-dir") {
-			dir := strings.Split(arg, "=")
-			setFlags.Directory = dir[1]
-		} else {
-			log.Println("The default values are used.")
+
+	if len(os.Args) != 0 {
+		for _, arg := range os.Args {
+			if strings.HasPrefix(arg, "--file-extension") || strings.HasPrefix(arg, "-fe") {
+				extension := strings.Split(arg, "=")
+				setFlags.FileExtension = extension[1]
+			} else if strings.HasPrefix(arg, "--directory") || strings.HasPrefix(arg, "-dir") {
+				dir := strings.Split(arg, "=")
+				setFlags.Directory = dir[1]
+			} else if strings.HasPrefix(arg, "--development-documentation") || strings.HasPrefix(arg, "-dev-doc") {
+				setFlags.Devdoc = true
+			}
 		}
+	} else {
+		log.Println("The System is used with default values.")
 	}
 
 	return setFlags
@@ -231,7 +239,6 @@ func createOrCleanOutputDir(directory string) {
 	} else if err != nil {
 		log.Panic("error:", err)
 	} else {
-		log.Println("The directory is cleaned and created again")
 		err := os.RemoveAll(outputPath)
 		if err != nil {
 			log.Panic("Error until delete :", err)
@@ -296,8 +303,13 @@ func processFiles() {
 	var mainTableOfContent []string
 	setFlags := getFlagsFromCli()
 	createOrCleanOutputDir(setFlags.Directory)
-
-	for _, path := range getFilePath(setFlags.FileExtension) {
+	filepaths := getFilePath(setFlags.FileExtension)
+	lengthFilepaths := len(filepaths)
+	log.Printf("Found: %d\n", lengthFilepaths)
+	var processedFileCounter int = 0
+	for _, path := range filepaths {
+		processedFileCounter += 1
+		log.Printf("Processed files %d / %d \n", processedFileCounter, lengthFilepaths)
 		var output strings.Builder
 		sections := make(map[string]string)
 		inCodeBlock := false
@@ -337,6 +349,12 @@ func processFiles() {
 	creatIndex(mainTableOfContent, setFlags.Directory)
 }
 
+func createAsciiBanner() {
+	fastFigure := figure.NewColorFigure("FDL", "", "Green", true)
+	fastFigure.Print()
+}
+
 func main() {
+	createAsciiBanner()
 	processFiles()
 }
