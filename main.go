@@ -339,7 +339,7 @@ func processFiles() {
 		}
 
 		toc := generateTableOfContents(sections)
-		finalOutput := strings.Replace(output.String(), "<h1>", "<h1>"+toc+"\n", 1)
+		finalOutput := strings.Replace(output.String(), "</h1>", "</h1>"+toc+"\n", 1)
 		finalOutput = finalOutput + processStyling()
 
 		outputStream(finalOutput, currentFile, setFlags.Directory)
